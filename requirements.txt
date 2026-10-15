@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+python-multipart
+python-dotenv
+PyMuPDF
+pdf2docx
+Pillow
+opencv-python-headless
+python-docx
+pytesseract
+openpyxl
+markdown
+pywin32; sys_platform == 'win32'

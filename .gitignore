@@ -1,0 +1,77 @@
+# office-converter — files that must NOT be published to GitHub.
+# Covers the local Python virtualenv, runtime data, secrets, editor/OS cruft
+# and the ad-hoc probe/test scratch files left over from development.
+
+# ---------- Python virtual environments ----------
+.venv-ocr/
+.venv/
+venv/
+env/
+ENV/
+
+# ---------- Python caches / build artefacts ----------
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ---------- Runtime data (never commit: grows without bound) ----------
+uploads/
+outputs/
+_start_log.txt
+*.log
+
+# ---------- Secrets and local configuration ----------
+# .env holds the real TRANSLATE_API_KEY; .env.example stays tracked.
+.env
+.env.local
+.env.*.local
+
+# ---------- Editor / OS cruft ----------
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------- Local AI assistant rules (drop this line to publish them) ----------
+.clinerules
+
+# ---------- Ad-hoc probe / test scratch files ----------
+# 文件名前缀（覆盖 _probe_word.py、_t_cfg.json、_probe_*.txt 等）
+_probe*
+_t_*
+_selflaunch*
+# 目录形式也要单独列：`_probe*` 这种写法在 git 里匹配不到目录本身
+_probe/
+_reg_backup/
+_medium_test.bat
+large-upload-response.json
+real-preview-response.json
+server-start.*
+server.log
+server-error.log
+原版式翻译预览_p*.png
+
+# ---------- 自检脚本的临时产物 ----------
+# 正常情况下脚本用系统临时目录；受限环境下会退回到仓库内的 _tmp_tests/，
+# 脚本退出时会自行删除，这里只是兜底。
+pdfedit-*/
+smoke-*/
+_tmp_tests/
+
+# ---------- One-off personal scripting, not part of the app ----------
+# revise_draft.py edits a local manuscript under source_docs/ and is not
+# required by main.py / converter.py / translator.py.
+revise_draft.py
+source_docs/

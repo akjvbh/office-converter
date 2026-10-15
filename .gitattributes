@@ -1,0 +1,35 @@
+# 统一换行符，避免 Windows 上出现大量 "LF will be replaced by CRLF" 提示，
+# 也避免不同系统之间产生整文件的假 diff。
+#
+#   text=auto  → 仓库内统一存 LF，检出时按平台自动转换
+#   *.bat      → 强制 CRLF：cmd.exe 在 LF-only 的批处理文件上会解析错位
+#   *.png 等   → 标记为二进制，禁止任何换行转换
+
+* text=auto
+
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+*.py   text
+*.js   text
+*.css  text
+*.html text
+*.md   text
+*.txt  text
+*.json text
+*.yml  text
+*.yaml text
+
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.pdf  binary
+*.zip  binary
+*.docx binary
+*.xlsx binary
+*.pptx binary
+*.exe  binary
+*.dll  binary
+*.pyd  binary

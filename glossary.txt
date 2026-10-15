@@ -1,0 +1,25 @@
+# 默认术语表：每行「英文=中文」，翻译时自动生效（术语表优先级最高）。
+# 想改译名直接改这里，保存后立即生效，无需重启；人名不要时删掉对应行即可。
+
+# ---- 作者姓名（按你提供的参考译稿）----
+Yu-Xiang Xie=谢宇翔
+Jun-Neng Liang=梁军能
+Gen Kaneko=金子元
+Lu-Ting Wen=文露婷
+Yi-Jian Li=黎一健
+Qui-Wei Ao=敖秋穗
+Li-Ming Huang=黄黎明
+Qiong Yang=杨琼
+Zhen-Ping Liao=廖振平
+Xue-Ming Yang=杨学明
+Hong-ping Zhang=张红平
+Lin-Yuan Jiang=江林源
+Er-Meng Yu=郁二蒙
+
+# ---- 固定术语 ----
+Land-based aquaculture tank=陆基养殖池
+land-based aquaculture tank=陆基养殖池
+Stocking density=放养密度
+Feeding frequencies=投喂频率
+Feeding frequency=投喂频率
+Growth performance=生长性能

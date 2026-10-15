@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="本地运行的办公文档转换工具：Word/Excel/PPT/PDF/图片互转、文件压缩、PDF 合并与可视化编辑、扫描件增强、英文文献翻译。">
+<meta name="theme-color" content="#2f5bd7">
+<title>办公文档转换器 · 本地文档工具箱</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232f5bd7'/%3E%3Cpath d='M18 14h18l10 10v26a4 4 0 0 1-4 4H18a4 4 0 0 1-4-4V18a4 4 0 0 1 4-4z' fill='%23fff'/%3E%3Cpath d='M36 14l10 10H36z' fill='%239bb0f0'/%3E%3Cpath d='M23 34h18M23 41h13' stroke='%232f5bd7' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/static/app.css?v=2">
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ 顶部栏 ============ -->
+  <header class="appbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">📄</div>
+      <div class="brand-text">
+        <h1>办公文档转换器</h1>
+        <p>Office / PDF / 图片 互转 · 压缩 · 合并 · 编辑 · 翻译 — 全部在本机完成</p>
+      </div>
+    </div>
+    <div class="appbar-spacer"></div>
+    <div class="appbar-actions">
+      <span class="pill" id="serverPill" title="后端服务状态"><i class="dot"></i><span id="serverPillText">连接中…</span></span>
+      <button class="icon-btn" id="themeToggle" type="button" title="切换深色 / 浅色主题" aria-label="切换主题">🌙</button>
+      <span class="save-state" id="globalSaveState" hidden></span>
+    </div>
+  </header>
+
+  <!-- ============ 选项卡 ============ -->
+  <div class="tabs-wrap" id="tabsWrap">
+    <nav class="tabs" id="tabs" role="tablist" aria-label="功能切换">
+      <button class="tab active" type="button" role="tab" aria-selected="true" data-mode="convert"><span class="tab-ico">🔄</span>格式转换</button>
+      <button class="tab" type="button" role="tab" aria-selected="false" data-mode="compress"><span class="tab-ico">🗜️</span>文件压缩</button>
+      <button class="tab" type="button" role="tab" aria-selected="false" data-mode="pdfjpg"><span class="tab-ico">📑</span>PDF 转 JPG</button>
+      <button class="tab" type="button" role="tab" aria-selected="false" data-mode="scan"><span class="tab-ico">📷</span>扫描照片</button>
+      <button class="tab" type="button" role="tab" aria-selected="false" data-mode="pdfmerge"><span class="tab-ico">🔗</span>PDF 合并</button>
+      <button class="tab" type="button" role="tab" aria-selected="false" data-mode="pdfedit"><span class="tab-ico">✏️</span>PDF 编辑</button>
+      <button class="tab" type="button" role="tab" aria-selected="false" data-mode="translate"><span class="tab-ico">🌐</span>文献翻译</button>
+    </nav>
+  </div>
+
+  <!-- ============ 文件选择 ============ -->
+  <section class="panel" aria-label="选择文件">
+    <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-describedby="uploadLimitHint">
+      <div class="dz-icon" aria-hidden="true">📁</div>
+      <p class="dz-main"><span>把文件拖到这里，或点击选择文件</span></p>
+      <p class="dz-hint" id="uploadLimitHint">单文件最大 200MB，批量总计 500MB</p>
+      <div class="dz-actions">
+        <button class="btn sm" type="button" id="pickFiles">📄 选择文件</button>
+        <button class="btn sm" type="button" id="pickFolder">📂 选择整个文件夹</button>
+      </div>
+    </div>
+    <input type="file" id="fileInput" multiple class="visually-hidden">
+    <input type="file" id="folderInput" webkitdirectory class="visually-hidden">
+
+    <div class="filebar hidden" id="fileBar">
+      <span class="fb-icon" aria-hidden="true">📎</span>
+      <span class="fb-name" id="fileName"></span>
+      <span class="fb-sub" id="fileSub"></span>
+      <span class="chips" id="fileChips"></span>
+      <button class="btn sm" type="button" id="clearFiles">清空</button>
+    </div>
+
+    <div class="file-list hidden" id="fileList">
+      <div class="file-list-head">
+        <span id="fileListTitle">已选文件</span>
+        <span class="spacer"></span>
+        <span id="fileListTotal"></span>
+      </div>
+      <div class="file-list-body" id="fileListBody"></div>
+    </div>
+
+    <div class="btn-row hidden" id="pdfQuickActions">
+      <button class="btn sm" type="button" id="quickPdfEdit">✏️ 打开 PDF 编辑</button>
+      <button class="btn sm" type="button" id="quickPdfMerge">🔗 切到 PDF 合并</button>
+      <button class="btn sm" type="button" id="quickTranslate">🌐 切到文献翻译</button>
+    </div>
+  </section>
+
+  <!-- ============ 格式转换 ============ -->
+  <section class="panel tool-panel" id="panel-convert">
+    <div class="panel-head">
+      <h3>🔄 格式转换</h3>
+      <p id="convertSummary">选择一个或多个文件，再选目标格式。批量时只会列出所有文件都支持的目标格式。</p>
+    </div>
+    <div class="field-row">
+      <label for="targetSelect">转换为</label>
+      <select id="targetSelect"></select>
+    </div>
+    <p class="hint">Word / Excel / PPT 转 PDF 默认调用本机 Microsoft Office，排版与 Office 一致；Word 自动化不可用时会自动改用内置排版引擎并给出提示。扫描版 PDF 转 Word 时请选择「Word（可编辑 .docx）」。</p>
+  </section>
+
+  <!-- ============ 文件压缩 ============ -->
+  <section class="panel tool-panel" id="panel-compress">
+    <div class="panel-head">
+      <h3>🗜️ 文件压缩</h3>
+      <p>图片与 PDF 按质量比例压缩，其它类型打包为 zip。压缩级别越高，体积越小、画质损失越明显。</p>
+    </div>
+    <div class="field-row">
+      <label for="levelSelect">压缩级别</label>
+      <select id="levelSelect">
+        <option value="80">80% · 质量优先</option>
+        <option value="60">60% · 推荐</option>
+        <option value="40">40% · 体积优先</option>
+        <option value="20">20% · 强力压缩</option>
+      </select>
+    </div>
+    <div class="estimate-box" id="estimateBox">
+      <div class="estimate-head">
+        <button class="btn sm" type="button" id="estimateBtn">🔍 预估四档压缩后的大小</button>
+        <span class="hint" id="estimateHint">预估会在后台真正压缩一次，不额外改变最终结果；也可以跳过，直接压缩。</span>
+      </div>
+      <div class="estimate-grid hidden" id="estimateGrid"></div>
+      <div class="estimate-foot hidden" id="estimateFoot"></div>
+    </div>
+  </section>
+
+  <!-- ============ PDF 转 JPG ============ -->
+  <section class="panel tool-panel hidden" id="panel-pdfjpg">
+    <div class="panel-head">
+      <h3>📑 PDF 转 JPG（每张 ≤300KB）</h3>
+      <p>一次选中整个文件夹，自动筛出其中的 PDF 并逐页导出 JPG。优先保证清晰度，超出 300KB 时自动降低 JPEG 质量与分辨率。</p>
+    </div>
+    <p class="hint" id="pdfjpgSummary">尚未选择文件。可点击上方「选择整个文件夹」一次性导入。</p>
+  </section>
+
+  <!-- ============ 扫描照片 ============ -->
+  <section class="panel tool-panel hidden" id="panel-scan">
+    <div class="panel-head">
+      <h3>📷 扫描照片</h3>
+      <p>上传一张手机拍摄的纸质文件照片，自动识别纸张四角、裁切、透视矫正、去阴影并增强对比度，最后输出灰度扫描 JPG（灰度能明显压掉阴影与色偏，文字更干净）。</p>
+    </div>
+    <p class="hint">请让纸张完整露出，且背景与纸张有明显色差；只支持一次一张图片。未识别到纸张边缘时会保留全图并只做去阴影增强。</p>
+  </section>
+
+  <!-- ============ PDF 合并 ============ -->
+  <section class="panel tool-panel hidden" id="panel-pdfmerge">
+    <div class="panel-head">
+      <h3>🔗 PDF 合并与插入</h3>
+      <p>按文件列表顺序处理；「指定页插入」以第一个 PDF 为主文件，其余 PDF 插入到指定位置。可在上方列表中拖拽调整顺序。</p>
+    </div>
+    <div class="field-row">
+      <label for="mergeMode">合并方式</label>
+      <select id="mergeMode">
+        <option value="sequence">按顺序合并</option>
+        <option value="alternate">逐页交替插入</option>
+        <option value="prepend">其他文件插到主文件前</option>
+        <option value="append">其他文件插到主文件后</option>
+        <option value="insert">插入到主文件指定页后</option>
+      </select>
+    </div>
+    <div class="field-row hidden" id="insertIndexRow">
+      <label for="insertIndex">插入位置</label>
+      <input id="insertIndex" type="number" min="0" value="0">
+      <span class="hint" style="margin:0">主 PDF 的页码，从 1 开始；填 0 表示插到首页之前。</span>
+    </div>
+    <p class="hint" id="mergeSummary">尚未选择文件。至少需要两个 PDF。</p>
+  </section>
+
+  <!-- ============ PDF 编辑 ============ -->
+  <section class="panel tool-panel hidden" id="panel-pdfedit">
+    <div class="panel-head">
+      <h3>✏️ PDF 可视化编辑</h3>
+      <p>双击页面上的原文字即可像 Word 一样改写；也可添加文字、遮盖、高亮、划线、矩形、圆形与手写签名。左侧管理页面（拖拽排序、复制、删除、旋转）。</p>
+    </div>
+
+    <details class="hint-details" id="pageOpsDetails">
+      <summary>按页码批量操作（删除 / 旋转 / 重排）</summary>
+      <div class="field-row">
+        <label for="deletePages">删除页</label>
+        <input id="deletePages" class="grow" type="text" placeholder="例如 2,4（页码从 1 开始）">
+      </div>
+      <div class="field-row">
+        <label for="rotatePage">旋转页</label>
+        <input id="rotatePage" class="grow" type="text" placeholder="例如 1:90,3:180">
+      </div>
+      <div class="field-row">
+        <label for="pageOrder">页面顺序</label>
+        <input id="pageOrder" class="grow" type="text" placeholder="例如 2,1,3（留空表示保持原顺序）">
+      </div>
+      <p class="hint">这里的输入框与左侧可视化操作双向同步，可以手动微调。</p>
+    </details>
+
+    <div class="editor hidden" id="editor">
+      <div class="editor-bar">
+        <button class="btn sm" type="button" id="undoBtn" title="撤销（Ctrl+Z）">↶ 撤销</button>
+        <button class="btn sm" type="button" id="redoBtn" title="重做（Ctrl+Shift+Z）">↷ 重做</button>
+        <span class="sep" aria-hidden="true"></span>
+        <button class="btn sm" type="button" id="zoomOut" title="缩小">－</button>
+        <span class="zoom-label" id="zoomLabel">100%</span>
+        <button class="btn sm" type="button" id="zoomIn" title="放大">＋</button>
+        <button class="btn sm" type="button" id="fitWidth">适应宽度</button>
+        <span class="sep" aria-hidden="true"></span>
+        <label class="hint" style="margin:0;display:flex;align-items:center;gap:6px">跳转
+          <input id="pageJump" class="mini-input" type="number" min="1" value="1">
+        </label>
+        <button class="btn sm" type="button" id="fullscreenBtn">全屏</button>
+        <span class="spacer"></span>
+        <span class="chip" id="editorSaveState">未保存</span>
+      </div>
+
+      <div class="editor-body" id="editorBody">
+        <aside class="editor-side pages-panel">
+          <h4>页面 <span id="pageCountLabel">0 页</span></h4>
+          <div class="thumb-list" id="thumbList"></div>
+          <div class="side-actions">
+            <button class="btn sm" type="button" id="addBlankPage">＋ 插入空白页</button>
+            <button class="btn sm" type="button" id="duplicatePage">复制当前页</button>
+            <button class="btn sm" type="button" id="rotateCurrentPage">旋转当前页 90°</button>
+            <button class="btn sm" type="button" id="deleteCurrentPage">删除当前页</button>
+          </div>
+        </aside>
+
+        <div class="stage-scroll" id="stageScroll">
+          <div class="pdf-stage" id="pdfStage"></div>
+        </div>
+
+        <aside class="editor-side properties-panel">
+          <h4>属性</h4>
+          <div id="propertyPanel" class="empty-props"></div>
+        </aside>
+      </div>
+
+      <div class="editor-bar">
+        <div class="tool-grid" id="toolGrid">
+          <button class="tool-btn active" type="button" data-tool="select">选择</button>
+          <button class="tool-btn" type="button" data-tool="text">文字</button>
+          <button class="tool-btn" type="button" data-tool="cover">白底遮盖</button>
+          <button class="tool-btn" type="button" data-tool="highlight">高亮</button>
+          <button class="tool-btn" type="button" data-tool="underline">下划线</button>
+          <button class="tool-btn" type="button" data-tool="strike">删除线</button>
+          <button class="tool-btn" type="button" data-tool="rect">矩形</button>
+          <button class="tool-btn" type="button" data-tool="ellipse">圆形</button>
+          <button class="tool-btn" type="button" data-tool="line">画线</button>
+          <button class="tool-btn" type="button" data-tool="arrow">箭头</button>
+          <button class="tool-btn" type="button" data-tool="sign">签名</button>
+        </div>
+        <input id="editText" class="grow" type="text" placeholder="要添加的文字内容">
+        <input id="editSize" type="number" value="14" min="6" title="字号">
+        <button class="btn sm" type="button" id="clearMarks">清空标注</button>
+        <button class="btn sm hidden" type="button" id="convertPdfWord">📝 转为可编辑 Word</button>
+      </div>
+      <p class="hint">提示：扫描版 PDF 没有文字层，双击文字不会生效，请用右侧「转为可编辑 Word」先做 OCR。标注只作用于当前编辑会话，点击下方按钮才会写入新 PDF。</p>
+    </div>
+
+    <p class="hint" id="editorPlaceholder">选择一个 PDF 后，这里会出现可视化编辑器。超过 50 页的文档只加载前 50 页用于预览，其余页面在保存时原样保留。</p>
+  </section>
+
+  <!-- ============ 文献翻译 ============ -->
+  <section class="panel tool-panel hidden" id="panel-translate">
+    <div class="panel-head">
+      <h3>🌐 英文文献翻译</h3>
+      <p>上传英文文献（PDF / DOCX / TXT），逐段调用大模型翻译并生成中文 Word。翻译耗时较长，请保持页面打开。</p>
+    </div>
+
+    <div class="field-row top">
+      <label>输出形式</label>
+      <div class="radio-cards" id="translateOutputCards" style="flex:1 1 100%">
+        <label class="on"><input type="radio" name="translateOutput" value="bilingual" checked><span><b>中英对照</b><small>每段先英文原文、后中文译文，适合精读与核对术语</small></span></label>
+        <label><input type="radio" name="translateOutput" value="chinese"><span><b>仅中文译文</b><small>干净的中文通读版 Word</small></span></label>
+        <label><input type="radio" name="translateOutput" value="layout_pdf"><span><b>原版式 PDF</b><small>擦除原文并在原坐标写入中文，保留图表与分栏（仅 PDF 输入）</small></span></label>
+        <label><input type="radio" name="translateOutput" value="both"><span><b>两种 Word 都要</b><small>同时产出中英对照与纯译文，打包为 ZIP</small></span></label>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <label for="translateDomain">专业领域</label>
+      <input id="translateDomain" class="grow" type="text" placeholder="例如 水产养殖、鱼类行为学（可留空）">
+    </div>
+
+    <div class="field-row top">
+      <label for="translateGlossary">术语表</label>
+      <textarea id="translateGlossary" placeholder="每行一条，强制采用指定译法，例如：&#10;operculum=厣盖&#10;individual identification=个体识别"></textarea>
+    </div>
+    <p class="hint">术语表已自动载入项目根目录 glossary.txt 的内容，可直接在此增删；这里填写的内容会排在文件内容之后，可覆盖文件中的译法。</p>
+
+    <div class="field-row">
+      <label for="translateNames">人名处理</label>
+      <select id="translateNames">
+        <option value="0">保留原文拼音（推荐，不会译错）</option>
+        <option value="1">译为中文（按拼音猜汉字，可能出错）</option>
+      </select>
+    </div>
+    <div class="field-row">
+      <label class="check"><input type="checkbox" id="translateSkipRefs" checked> 跳过参考文献部分（省时省钱）</label>
+    </div>
+
+    <div class="progress hidden" id="translateProgress">
+      <div class="progress-track"><div class="progress-fill indeterminate" id="translateBarFill"></div></div>
+      <div class="progress-msg"><span id="translateMsg">正在准备…</span><span id="translatePct"></span></div>
+    </div>
+
+    <div class="status-bar" id="translateStatus"></div>
+  </section>
+
+  <!-- ============ 操作条 ============ -->
+  <div class="actionbar">
+    <div class="ab-text" id="actionHint">请先选择文件。</div>
+    <button class="primary-btn" type="button" id="actionBtn" disabled>开始转换</button>
+  </div>
+  <div class="status-bar" id="statusBar" role="status" aria-live="polite"></div>
+  <div class="result-grid" id="resultGrid"></div>
+
+  <!-- ============ 页脚 ============ -->
+  <footer class="footer">
+    <div class="footer-cols">
+      <div><b>处理位置</b>：文件只在本机处理，不经过任何第三方服务器（文献翻译除外，需调用你配置的大模型接口）。</div>
+      <div><b>上传上限</b>：<span id="footerLimits">单文件 200MB，批量 500MB</span></div>
+      <div><b>需要 Office</b>：Word/Excel/PPT 转 PDF 依赖本机 Microsoft Office，其它功能不受影响。</div>
+    </div>
+  </footer>
+
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
+
+<script type="module" src="/static/app.js?v=2"></script>
+</body>
+</html>
